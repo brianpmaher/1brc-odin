@@ -21,7 +21,7 @@ Calc_Result :: struct {
 	avg_temp: f32,
 }
 
-main :: proc() {
+main :: proc() #no_bounds_check {
 	if len(os.args) != 2 {
 		fmt.println("Usage: 1br <data_file>")
 		return
@@ -75,7 +75,10 @@ main :: proc() {
 	}
 }
 
-chunk_and_process :: proc(bytes: []byte, num_procs: int) -> map[string]Calc_Result {
+chunk_and_process :: #force_inline proc(
+	bytes: []byte,
+	num_procs: int,
+) -> map[string]Calc_Result #no_bounds_check {
 	input_size := len(bytes)
 	chunk_size := input_size / num_procs
 	chunk_beg := 0
@@ -119,7 +122,9 @@ chunk_and_process :: proc(bytes: []byte, num_procs: int) -> map[string]Calc_Resu
 	return merged_results
 }
 
-merge_results :: proc(thread_datas: []Thread_Data) -> map[string]Calc_Result {
+merge_results :: #force_inline proc(
+	thread_datas: []Thread_Data,
+) -> map[string]Calc_Result #no_bounds_check {
 	merged_results := map[string]Calc_Result{}
 	for data in thread_datas {
 		for station, result in data.result {
@@ -136,14 +141,14 @@ merge_results :: proc(thread_datas: []Thread_Data) -> map[string]Calc_Result {
 	return merged_results
 }
 
-chunk_thread_proc :: proc(t: ^thread.Thread) {
+chunk_thread_proc :: #force_inline proc(t: ^thread.Thread) #no_bounds_check {
 	data := cast(^Thread_Data)t.data
 	fmt.println("starting chunk thread:", t.user_index)
 	data.result = calculate_stats(data.chunk)
 	fmt.println("completed chunk thread:", t.user_index)
 }
 
-calculate_stats :: proc(bytes: []byte) -> map[string]Calc_Result {
+calculate_stats :: #force_inline proc(bytes: []byte) -> map[string]Calc_Result #no_bounds_check {
 	// parse line by line
 	// each line has the format:
 	// <station-name>;<temp>
@@ -181,7 +186,7 @@ calculate_stats :: proc(bytes: []byte) -> map[string]Calc_Result {
 	return results
 }
 
-parse_temp :: proc(temp_bytes: []byte) -> (f32, bool) {
+parse_temp :: #force_inline proc(temp_bytes: []byte) -> (f32, bool) #no_bounds_check {
 	if len(temp_bytes) == 0 {
 		return 0, false
 	}
@@ -223,6 +228,6 @@ parse_temp :: proc(temp_bytes: []byte) -> (f32, bool) {
 	return sign * res, true
 }
 
-log_time :: proc(tag: string, stopwatch: time.Stopwatch) {
+log_time :: #force_inline proc(tag: string, stopwatch: time.Stopwatch) #no_bounds_check {
 	fmt.printf("%s - elapsed: %v\n", tag, time.stopwatch_duration(stopwatch))
 }
