@@ -1,3 +1,3 @@
 #!/bin/bash
 
-odin build . -o:speed
+odin run . -o:speed -- ../1brc/measurements.txt
